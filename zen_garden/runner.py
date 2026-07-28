@@ -11,6 +11,7 @@ import warnings
 from pathlib import Path
 
 import zen_garden.default_config as default_config
+from zen_garden.plugin_system.events import Event, EventPublisher
 from zen_garden.plugin_system.loader import register_plugins
 
 from .optimization_setup import OptimizationSetup
@@ -173,6 +174,16 @@ def run(config="./config.json", dataset=None, job_index=None, folder_output=None
             # write results
             Postprocess(
                 optimization_setup,
+                scenarios=config.scenarios,
+                subfolder=subfolder,
+                model_name=model_name,
+                scenario_name=scenario_name,
+                param_map=param_map,
+            )
+            # notify plugins (e.g. mga) that baseline solve finished
+            EventPublisher.trigger(
+                Event.after_solve,
+                optimization_setup=optimization_setup,
                 scenarios=config.scenarios,
                 subfolder=subfolder,
                 model_name=model_name,

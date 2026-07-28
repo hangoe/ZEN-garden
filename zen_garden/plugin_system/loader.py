@@ -5,6 +5,7 @@ according to the user's configuration (as defined in config.json).
 """
 
 import importlib
+import importlib.metadata
 from types import ModuleType
 
 from zen_garden.plugin_system.events import EventPublisher
@@ -30,12 +31,18 @@ def register_plugins(
         >>> plugins_config = {"ExamplePlugin": {"param1": "value1", "param2": "value2"}}
         >>> register_plugins(plugins_config)
     """
+    entry_points = {
+        ep.name: ep
+        for ep in importlib.metadata.entry_points(group="zen_garden.plugins")
+    }
     output = {}
     for plugin, config in plugins_config.items():
-        output[plugin] = importlib.import_module(
-            name=f"{source_package}.{plugin}.plugin"
-        )
-        output[plugin].config.update(config)
+        if plugin in entry_points:
+            module = entry_points[plugin].load()
+        else:
+            module = importlib.import_module(name=f"{source_package}.{plugin}.plugin")
+        module.config.update(config)
+        output[plugin] = module
     return output
 
 
